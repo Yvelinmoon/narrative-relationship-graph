@@ -14,7 +14,7 @@ export function createScene(root) {
   root.appendChild(labelRenderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x09060a);
+  scene.background = null;
   scene.fog = new THREE.Fog(0x09060a, 1200, 3400);
 
   const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 5200);

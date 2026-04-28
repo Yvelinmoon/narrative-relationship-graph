@@ -1,12 +1,12 @@
-import { DATASET, DATASET_KEY, GRAPH_VIEWS, TYPE_META } from "./data/harry-potter.js?v=202604281032";
-import { createScene } from "./core/scene.js?v=202604281032";
-import { createGraphController } from "./core/graph.js?v=202604281032";
-import { createInteractionController } from "./core/interaction.js?v=202604281032";
-import { createInfoCardController } from "./core/info-card.js?v=202604281032";
-import { createGraphState } from "./core/state.js?v=202604281032";
+import { DATASET, DATASET_KEY, GRAPH_VIEWS, TYPE_META } from "./data/harry-potter.js?v=202604281252";
+import { createScene } from "./core/scene.js?v=202604281252";
+import { createGraphController } from "./core/graph.js?v=202604281252";
+import { createInteractionController } from "./core/interaction.js?v=202604281252";
+import { createInfoCardController } from "./core/info-card.js?v=202604281252";
+import { createGraphState } from "./core/state.js?v=202604281252";
 
 const root = document.getElementById("graph-root");
-const BUILD_ID = "build-202604281032";
+const BUILD_ID = "build-202604281252";
 
 function mountDecorLayer() {
   if (!root) {

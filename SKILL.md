@@ -444,6 +444,10 @@ Add overview first, then 3-8 useful subgraphs. Each subgraph should answer a cle
 
 Do this as a required step, not a final polish pass. Change colors, background, typography, camera, node materials, card tone, decorative elements, title, and accessibility labels to match the world. Preserve interaction and graph-reading clarity. Never ship a new world while it still looks like a previous franchise theme.
 
+9. Generate custom theme assets when needed.
+
+If Wikimedia images are missing, inconsistent, too literal, or the page needs a unified visual direction, use Neta image generation to create theme assets such as page backgrounds, abstract faction emblems, object icons, or consistent node avatars. Keep generated assets secondary to graph readability: backgrounds need a dark overlay, avatars need clean crops, and decorative images must not compete with nodes/edges.
+
 ## Implementation Checklist
 
 When editing the base project, usually touch these files:
@@ -538,6 +542,63 @@ Rendering fallback rules:
 - Keep node visible without image
 - Crop portraits from top center when possible to preserve heads
 - Do not let images distort; crop rather than stretch
+
+## Neta Generated Assets
+
+Use Neta generation when the user wants a custom theme background, when real-source images are unavailable, or when the graph needs a coherent non-photographic visual system.
+
+Common uses:
+
+- 16:9 page background for the whole graph
+- Square or 3:4 node avatar images
+- Faction emblems or symbolic object images
+- Reference images for later video or visual extensions
+
+Generate image command:
+
+```bash
+env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY NETA_API_BASE_URL=https://api.talesofai.com \
+  npx -y @talesofai/neta-skills@latest make_image \
+  --prompt "<theme-safe visual prompt, no text, no logo, no UI>" \
+  --aspect "16:9"
+```
+
+Use `--aspect "16:9"` for page backgrounds, `--aspect "1:1"` for icons or node portraits, and `--aspect "3:4"` for character-card portraits.
+
+Before generation, check AP if needed:
+
+```bash
+env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY NETA_API_BASE_URL=https://api.talesofai.com \
+  npx -y @talesofai/neta-skills@latest get_ap_info
+```
+
+If Neta reports login or network errors:
+
+- Prefer global host: `NETA_API_BASE_URL=https://api.talesofai.com`.
+- If local proxy breaks CLI fetch, unset `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` for the command.
+- If login is required, use `login --action request-code`, open the returned verification URL, then run `login --action verify-code`.
+- If the region says device login is unsupported, authenticate with `NETA_TOKEN` instead.
+
+After generation:
+
+1. Download the returned artifact URL into the project, usually `assets/<story>-background.webp` or `assets/<node-id>.webp`.
+2. Use local assets in the page rather than depending on remote generated URLs.
+3. For full-page backgrounds, render the image below the Three.js canvas and add a dark overlay above it.
+4. Keep `scene.background = null` when using a CSS background behind an alpha WebGL canvas.
+5. Update cache-busting versions after adding or replacing generated assets.
+
+CSS pattern for generated backgrounds:
+
+```css
+#graph-root::before {
+  background: url("./assets/<story>-background.webp") center / cover no-repeat;
+  filter: saturate(0.85) brightness(0.72);
+}
+
+#graph-root::after {
+  background: radial-gradient(circle, rgba(8, 6, 8, 0.28), rgba(3, 3, 4, 0.9));
+}
+```
 
 ## Verification
 
