@@ -2,6 +2,17 @@
 
 A three.js-based frontend prototype for exploring the Harry Potter relationship network.
 
+This folder is an implementation example, not the default theme. It demonstrates current expected patterns for the skill:
+
+- Modular Three.js graph code
+- Subgraph navigation
+- Compact clicked-node cards
+- Wikimedia-style node images with graceful fallback
+- Neta-generated local background asset in `assets/`
+- Robust Three.js `scene.background` texture handling so the background is not hidden by the WebGL canvas
+
+When building a different world, reuse the architecture but replace all Harry Potter data, colors, decorative motifs, labels, and generated assets.
+
 ## Run
 
 ```bash

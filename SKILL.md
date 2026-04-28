@@ -1,6 +1,6 @@
 ---
 name: narrative-relationship-graph
-description: Use when the user wants to create, update, personalize, or rebuild an interactive narrative relationship graph / 3D character-event-world network, including preparing node data, writing relationships, splitting overview/subgraph views, encoding factions, searching Wikimedia node images, adapting the bundled template.html, and creating a themed Three.js graph for stories such as 红楼梦, 进击的巨人, Harry Potter, historical narratives, games, novels, or fictional universes.
+description: Use when the user wants to create, update, personalize, or rebuild an interactive narrative relationship graph / 3D character-event-world network, including preparing node data, writing relationships, splitting overview/subgraph views, encoding factions, searching Wikimedia node images, generating Neta theme backgrounds/assets, adapting the bundled template.html, and creating a themed Three.js graph for stories such as 红楼梦, 进击的巨人, Harry Potter, historical narratives, games, novels, or fictional universes.
 metadata:
   short-description: Build personalized narrative relationship graphs
 ---
@@ -24,6 +24,8 @@ Use the standalone HTML shell bundled with this skill as the HTML entry template
 
 Do not inline the HTML into `SKILL.md`. When a user asks to create or personalize a relationship graph, copy or adapt `template.html` as the page shell, then connect it to the graph app scripts/styles.
 
+The `examples/harry-potter/` folder is a runnable example snapshot showing current implementation patterns: modular Three.js, subgraph navigation, clicked-node cards, Wikimedia-style node images, Neta-generated background asset, and robust `scene.background` texture handling. Use it as implementation reference when needed, but do not copy its Harry Potter theme, data, colors, or labels into unrelated worlds.
+
 The reusable implementation pattern is a static Three.js relationship graph with modular JS, CSS, vendored Three.js, node cards, subgraph navigation, themed nodes, faction-colored nodes, curved relation lines, hover/focus behavior, and a cache-busted entry flow.
 
 For a new world, create or adapt a project using this structure, then replace the data, title, copy, colors, decorative elements, node imagery, and typography so the result is specific to the user's story.
@@ -46,6 +48,30 @@ When changing JS or CSS, update cache-busting versions in:
 - `BUILD_ID` in `src/main.js`
 
 Keep the bundled `template.html` as the HTML shell and the full Three.js project as the working implementation template. For a new personalized graph, either modify the current project directly when the user is iterating on it, or copy the project to a new folder first if the user wants a separate work.
+
+## Non-Negotiable Gates
+
+Do not treat image search or generated theme assets as optional polish. Before final delivery, explicitly pass these gates or state the blocker.
+
+1. Data gate: every node has a stable ID, type, zone, 50-100 Chinese character `description`, and meaningful relation labels.
+2. Wikimedia image gate: run a Wikimedia API image pass for core characters, factions, places, and iconic objects. Add `image`, `imageSource`, and `imageCredit` when a reliable image exists. If no image is used for an important node, record or mention why, such as no clear result, rights risk, or misleading image.
+3. Neta theme asset gate: for a themed graph, generate or select a 16:9 theme background with Neta unless the user explicitly opts out or authentication/quota blocks it. Download the result into local `assets/` and wire it into the project.
+4. Theme reset gate: remove prior-world text, colors, decorative motifs, and hardcoded IDs from the visible app unless continuing that exact world.
+5. Verification gate: check local serving, syntax, cache-busting versions, and at least one visible route where node images/background assets load.
+
+Final updates should mention the Wikimedia pass and Neta asset pass. If either was skipped, say why in one sentence.
+
+## Default Execution Order
+
+Use this order for new themed graph builds unless the user explicitly narrows the task:
+
+1. Create or copy the project shell from `template.html` and the modular Three.js architecture.
+2. Build the node/edge/view data with descriptions and directional perspectives where needed.
+3. Run the Wikimedia API image pass for important nodes and store provenance.
+4. Run Neta generation for the primary 16:9 background or document the skip reason.
+5. Reset the visual theme, including palette, node materials, cards, background, and decorative motifs.
+6. Wire generated/downloaded assets locally under `assets/` and update cache versions.
+7. Verify syntax, local serving, asset URLs, subgraphs, and visible background/node image behavior.
 
 ## Product Principle
 
@@ -441,9 +467,9 @@ Use events to explain change over time, not just as extra nodes.
 
 Only add places and objects that connect important characters, factions, or events.
 
-6. Search and attach node images.
+6. Search and attach node images. This step is mandatory for important nodes.
 
-For character, faction, place, and iconic object nodes, use the Wikimedia APIs first. Add images where a clear representative image exists, and leave the node image-free when the result is uncertain or visually misleading. Do not delay the graph for perfect image coverage; prioritize core characters and visually important world nodes.
+For character, faction, place, and iconic object nodes, use the Wikimedia APIs first. Add images where a clear representative image exists, and leave the node image-free when the result is uncertain or visually misleading. Do not delay the graph for perfect image coverage; prioritize core characters and visually important world nodes. Do not skip this because the graph already works without images.
 
 Primary API flow:
 
@@ -471,9 +497,9 @@ Add overview first, then 3-8 useful subgraphs. Each subgraph should answer a cle
 
 Do this as a required step, not a final polish pass. Change colors, background, typography, camera, node materials, card tone, decorative elements, title, and accessibility labels to match the world. Preserve interaction and graph-reading clarity. Never ship a new world while it still looks like a previous franchise theme.
 
-9. Generate custom theme assets when needed.
+9. Generate custom theme assets with Neta unless explicitly skipped.
 
-If Wikimedia images are missing, inconsistent, too literal, or the page needs a unified visual direction, use Neta image generation to create theme assets such as page backgrounds, abstract faction emblems, object icons, or consistent node avatars. Keep generated assets secondary to graph readability: backgrounds need a dark overlay, avatars need clean crops, and decorative images must not compete with nodes/edges.
+Use Neta image generation to create at least the primary 16:9 page background for themed graph projects, unless the user opts out or Neta authentication/quota/network blocks it. Also use Neta when Wikimedia images are missing, inconsistent, too literal, or the page needs a coherent non-photographic visual system. Keep generated assets secondary to graph readability: backgrounds need a dark overlay, avatars need clean crops, and decorative images must not compete with nodes/edges.
 
 ## Implementation Checklist
 
@@ -482,9 +508,10 @@ When editing the base project, usually touch these files:
 - `src/data/<story>.js`: preferred for a new world; use existing story files only when continuing that same graph
 - `src/core/state.js`: subgraph filtering and layout behavior if needed
 - `src/core/graph.js`: node materials, faction color priority, edge style, reveal/highlight behavior
-- `src/core/scene.js`: camera, lighting, controls
+- `src/core/scene.js`: camera, lighting, controls, generated background texture via `scene.background`
 - `src/main.js`: story data import, decorative DOM, view index, build stamp, initialization
-- `styles.css`: theme tokens, UI, labels, cards, decorative atmosphere
+- `styles.css`: theme tokens, UI, labels, cards, decorative atmosphere, dark overlay for generated backgrounds
+- `assets/`: local Wikimedia downloads or Neta-generated backgrounds/icons/avatars
 - `index.html` and `app.js`: title, accessibility labels, data-entry import, and cache-busting
 
 Keep the current project architecture unless there is a strong reason to refactor.
@@ -674,6 +701,15 @@ curl -I 'http://127.0.0.1:8824/?v=<cache-version>'
 ```
 
 If subgraphs changed, verify every view has at least one node and preferably at least one edge.
+
+Asset verification checklist:
+
+- Wikimedia pass completed for core nodes, with `imageSource`/`imageCredit` where images are used.
+- Neta 16:9 background generated or a skip reason is documented.
+- Generated/downloaded assets live under local `assets/`, not only remote URLs.
+- Background asset is wired through Three.js `scene.background` for graph pages using WebGL.
+- `curl -I` returns 200 for the page and for at least one local image/background asset.
+- Cache-busting versions changed in `index.html`, `app.js`, `src/main.js`, and `BUILD_ID`.
 
 ## Common Failure Modes
 
