@@ -57,6 +57,7 @@ Prioritize:
 - Faction/force relationships that are directly visible
 - A default overview plus smaller independent subgraphs
 - Hover/focus states that isolate relevant relationships
+- Compact clicked-node cards that summarize rather than dump every relation
 - Sparse enough layouts that the graph can be manually indexed
 - Minimal UI outside the graph; navigation is allowed only when it improves graph browsing
 
@@ -66,6 +67,7 @@ Avoid:
 - Encoding too many meanings at once on the same visual channel
 - Adding decorative UI that competes with the graph
 - Showing all edge labels by default
+- Letting info cards exceed the viewport without scroll protection
 - Random rainbow colors
 
 ## Theme Reset Rules
@@ -280,6 +282,31 @@ Suggested priority:
 6. School / house / local group
 
 Do not add complex outer rings or many small pips unless the user explicitly asks for multi-affiliation glyphs. They are easy to misunderstand.
+
+## Info Card Rules
+
+The clicked-node card should provide useful detail without becoming a second page. Keep it compact and scannable.
+
+Recommended card contents:
+
+- Title, image if available, node type/layer/zone chips
+- One 50-100 Chinese character description
+- One compact relation summary chip, such as direct relation count by zone
+- Up to 5-8 representative relationship details
+- Directional `perspectives` only for the representative edges that need them
+
+Avoid:
+
+- Separate large statistic blocks unless the user asks for analytics
+- Repeating all direct relations for high-degree nodes
+- Showing both “key associations” chips and long relation lists at the same time
+- Cards that exceed the viewport with no scroll handling
+
+Implementation rules:
+
+- Add `max-height: calc(100vh - <margin>)` and `overflow-y: auto` to the card.
+- Prefer relation sorting and slicing, for example `.slice(0, 6)`, over dumping everything.
+- Put full relationship exploration into subgraphs, not into one oversized card.
 
 ## Views And Subgraphs
 

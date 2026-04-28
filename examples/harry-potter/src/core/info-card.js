@@ -97,10 +97,6 @@ function createRelationItem(content, muted = false) {
   return item;
 }
 
-function uniqueOrdered(values) {
-  return [...new Set(values.filter(Boolean))];
-}
-
 function createNodeDescriptor(graphState, edgeIndex, nodeId) {
   const node = graphState.getNode(nodeId);
   if (!node) {
@@ -135,12 +131,6 @@ function createNodeDescriptor(graphState, edgeIndex, nodeId) {
     world: relations.filter((item) => item.relatedNode?.zone === "world"),
   };
 
-  const chips = uniqueOrdered([
-    ...byZone.world.slice(0, 2).map((item) => item.relatedNode?.label),
-    ...byZone.event.slice(0, 2).map((item) => item.relatedNode?.label),
-    ...byZone.character.slice(0, 2).map((item) => item.relatedNode?.label),
-  ]).slice(0, 6);
-
   return {
     title: node.label,
     imageUrl: node.image ?? null,
@@ -148,16 +138,10 @@ function createNodeDescriptor(graphState, edgeIndex, nodeId) {
     typeLabel: TYPE_LABELS[node.type] ?? node.type,
     levelLabel: LEVEL_LABELS[graphState.getNodeLevel(nodeId)] ?? "未分层",
     zoneLabel: ZONE_LABELS[graphState.getNodeZone(nodeId)] ?? "未知区",
-    relationCount: relations.length,
-    counts: {
-      character: byZone.character.length,
-      event: byZone.event.length,
-      world: byZone.world.length,
-    },
-    chips,
+    relationSummary: `${relations.length} 条直接关系 / 角色 ${byZone.character.length} / 事件 ${byZone.event.length} / 世界 ${byZone.world.length}`,
     relationItems: relations
       .sort((left, right) => (right.relatedNode?.zone ?? "").localeCompare(left.relatedNode?.zone ?? ""))
-      .slice(0, 12)
+      .slice(0, 6)
       .map((item) => item.relationDetail),
   };
 }
@@ -220,6 +204,7 @@ export function createInfoCardController({ root, graphState }) {
       createChip(descriptor.typeLabel),
       createChip(descriptor.levelLabel),
       createChip(descriptor.zoneLabel),
+      createChip(descriptor.relationSummary),
     );
 
     titleBlock.append(title, subtitle);
@@ -228,37 +213,6 @@ export function createInfoCardController({ root, graphState }) {
     const description = document.createElement("p");
     description.className = "info-description";
     description.textContent = descriptor.description || "这个节点还没有补充简介。";
-
-    const stats = document.createElement("div");
-    stats.className = "info-stats";
-    [
-      ["直接关系", String(descriptor.relationCount)],
-      ["角色", String(descriptor.counts.character)],
-      ["事件", String(descriptor.counts.event)],
-      ["世界", String(descriptor.counts.world)],
-    ].forEach(([label, value]) => {
-      const stat = document.createElement("div");
-      stat.className = "info-stat";
-      const valueNode = document.createElement("strong");
-      valueNode.textContent = value;
-      const labelNode = document.createElement("span");
-      labelNode.textContent = label;
-      stat.append(valueNode, labelNode);
-      stats.appendChild(stat);
-    });
-
-    const chipSection = document.createElement("div");
-    chipSection.className = "info-section";
-    const chipTitle = document.createElement("div");
-    chipTitle.className = "info-section-title";
-    chipTitle.textContent = "关键关联";
-    const chipList = document.createElement("div");
-    chipList.className = "info-chip-list";
-    descriptor.chips.forEach((chip) => chipList.appendChild(createChip(chip)));
-    if (!descriptor.chips.length) {
-      chipList.appendChild(createChip("暂无补充关联"));
-    }
-    chipSection.append(chipTitle, chipList);
 
     const relationSection = document.createElement("div");
     relationSection.className = "info-section";
@@ -273,7 +227,7 @@ export function createInfoCardController({ root, graphState }) {
     }
     relationSection.append(relationTitle, relationList);
 
-    panel.append(header, description, stats, chipSection, relationSection);
+    panel.append(header, description, relationSection);
     panel.classList.remove("hidden");
     lastNodeId = nodeId;
   }

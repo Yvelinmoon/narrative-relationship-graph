@@ -432,6 +432,9 @@ body {
   right: 20px;
   width: min(340px, calc(100vw - 40px));
   padding: 16px 16px 14px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border-radius: 0;
   background:
     linear-gradient(180deg, rgba(28, 18, 15, 0.9) 0%, rgba(14, 11, 12, 0.88) 100%);
@@ -446,6 +449,8 @@ body {
   transition:
     opacity 220ms ease,
     transform 220ms ease;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(215, 177, 106, 0.34) rgba(255, 244, 216, 0.04);
 }
 
 .info-card.hidden {
@@ -487,7 +492,7 @@ body {
 
 .info-card-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
   line-height: 1.05;
   font-weight: 600;
   color: #fff7ea;
@@ -505,12 +510,12 @@ body {
 }
 
 .info-description {
-  margin: 14px 0 0;
-  padding: 12px 0 0;
+  margin: 12px 0 0;
+  padding: 10px 0 0;
   border-top: 1px solid rgba(255, 244, 216, 0.07);
   color: rgba(247, 236, 218, 0.78);
-  font-size: 13px;
-  line-height: 1.62;
+  font-size: 12px;
+  line-height: 1.55;
   letter-spacing: 0.01em;
 }
 
@@ -525,39 +530,8 @@ body {
   letter-spacing: 0.03em;
 }
 
-.info-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.info-stat {
-  padding: 10px 10px 9px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 244, 216, 0.06);
-}
-
-.info-stat strong,
-.info-stat span {
-  display: block;
-}
-
-.info-stat strong {
-  font-size: 18px;
-  line-height: 1;
-  color: #fff7ea;
-}
-
-.info-stat span {
-  margin-top: 6px;
-  font-size: 11px;
-  color: rgba(247, 236, 218, 0.5);
-}
-
 .info-section {
-  margin-top: 16px;
+  margin-top: 13px;
 }
 
 .info-section-title {
@@ -575,16 +549,16 @@ body {
 }
 
 .info-list-item {
-  padding: 7px 0;
+  padding: 6px 0;
   border-top: 1px solid rgba(255, 244, 216, 0.06);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.4;
   color: rgba(247, 236, 218, 0.84);
 }
 
 .info-relation-title {
   color: rgba(255, 247, 234, 0.9);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.35;
 }
 
@@ -596,7 +570,7 @@ body {
 }
 
 .info-perspectives {
-  margin-top: 7px;
+  margin-top: 5px;
   padding-left: 10px;
   border-left: 1px solid rgba(215, 177, 106, 0.18);
 }
@@ -604,9 +578,9 @@ body {
 .info-perspective {
   display: grid;
   gap: 2px;
-  padding: 4px 0;
+  padding: 3px 0;
   color: rgba(247, 236, 218, 0.72);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.42;
 }
 
@@ -796,9 +770,5 @@ body {
     bottom: 36px;
     left: 12px;
     width: auto;
-  }
-
-  .info-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
