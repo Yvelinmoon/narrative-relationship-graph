@@ -6,6 +6,8 @@ export function createScene(root) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x000000, 0);
+  renderer.domElement.style.background = "transparent";
   root.appendChild(renderer.domElement);
 
   const labelRenderer = new CSS2DRenderer();
@@ -14,7 +16,11 @@ export function createScene(root) {
   root.appendChild(labelRenderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = null;
+  const backgroundTexture = new THREE.TextureLoader().load("./assets/harry-potter-dark-bg.webp");
+  if (THREE.SRGBColorSpace) {
+    backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+  }
+  scene.background = backgroundTexture;
   scene.fog = new THREE.Fog(0x09060a, 1200, 3400);
 
   const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 1, 5200);

@@ -1,12 +1,31 @@
-import { DATASET, DATASET_KEY, GRAPH_VIEWS, TYPE_META } from "./data/harry-potter.js?v=202604281414";
-import { createScene } from "./core/scene.js?v=202604281414";
-import { createGraphController } from "./core/graph.js?v=202604281414";
-import { createInteractionController } from "./core/interaction.js?v=202604281414";
-import { createInfoCardController } from "./core/info-card.js?v=202604281414";
-import { createGraphState } from "./core/state.js?v=202604281414";
+import { DATASET, DATASET_KEY, GRAPH_VIEWS, TYPE_META } from "./data/harry-potter.js?v=202604281516";
+import { createScene } from "./core/scene.js?v=202604281516";
+import { createGraphController } from "./core/graph.js?v=202604281516";
+import { createInteractionController } from "./core/interaction.js?v=202604281516";
+import { createInfoCardController } from "./core/info-card.js?v=202604281516";
+import { createGraphState } from "./core/state.js?v=202604281516";
 
 const root = document.getElementById("graph-root");
-const BUILD_ID = "build-202604281414";
+const BUILD_ID = "build-202604281516";
+
+function mountBackgroundLayer() {
+  if (!root) {
+    return;
+  }
+
+  const layer = document.createElement("div");
+  layer.className = "graph-bg";
+  layer.setAttribute("aria-hidden", "true");
+
+  const image = document.createElement("div");
+  image.className = "graph-bg-image";
+
+  const overlay = document.createElement("div");
+  overlay.className = "graph-bg-overlay";
+
+  layer.append(image, overlay);
+  root.prepend(layer);
+}
 
 function mountDecorLayer() {
   if (!root) {
@@ -162,6 +181,7 @@ function showBootError(error) {
 }
 
 try {
+  mountBackgroundLayer();
   mountDecorLayer();
   mountBuildStamp();
   const sceneController = createScene(root);

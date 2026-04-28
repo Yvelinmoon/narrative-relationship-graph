@@ -610,22 +610,50 @@ After generation:
 
 1. Download the returned artifact URL into the project, usually `assets/<story>-background.webp` or `assets/<node-id>.webp`.
 2. Use local assets in the page rather than depending on remote generated URLs.
-3. For full-page backgrounds, render the image below the Three.js canvas and add a dark overlay above it.
-4. Keep `scene.background = null` when using a CSS background behind an alpha WebGL canvas.
+3. For full-page Three.js graph backgrounds, prefer loading the image as a Three.js scene background texture. This avoids CSS backgrounds being hidden by the WebGL canvas clear pass.
+4. Use CSS overlays only for darkening/vignette effects above the canvas, not as the only place where the background image exists.
 5. Update cache-busting versions after adding or replacing generated assets.
 
-CSS pattern for generated backgrounds:
+Stable Three.js background pattern:
+
+```js
+const backgroundTexture = new THREE.TextureLoader().load("./assets/<story>-background.webp");
+if (THREE.SRGBColorSpace) {
+  backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+}
+scene.background = backgroundTexture;
+```
+
+Keep the renderer setup explicit:
+
+```js
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);
+renderer.domElement.style.background = "transparent";
+```
+
+CSS overlay pattern for generated backgrounds:
 
 ```css
-#graph-root::before {
-  background: url("./assets/<story>-background.webp") center / cover no-repeat;
-  filter: saturate(0.85) brightness(0.72);
-}
-
-#graph-root::after {
-  background: radial-gradient(circle, rgba(8, 6, 8, 0.28), rgba(3, 3, 4, 0.9));
+.graph-bg-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(10, 7, 9, 0.08), rgba(5, 4, 6, 0.22) 66%, rgba(3, 3, 4, 0.48) 100%),
+    linear-gradient(90deg, rgba(4, 3, 5, 0.38), rgba(8, 6, 8, 0.12) 45%, rgba(4, 3, 5, 0.42));
 }
 ```
+
+If you intentionally use a CSS image behind the canvas instead of `scene.background`, verify all of these are true:
+
+- The WebGL renderer uses `{ alpha: true }`.
+- `renderer.setClearColor(0x000000, 0)` is set.
+- `scene.background = null`.
+- The canvas CSS background is `transparent`.
+- The CSS background layer is not behind a negative `z-index` stacking context.
+
+In practice, if the user says the background looks exactly unchanged after refresh, switch to `scene.background` texture first before further tuning brightness.
 
 ## Verification
 
@@ -656,3 +684,5 @@ If subgraphs changed, verify every view has at least one node and preferably at 
 - Lines look like electric wires: reduce saturation, use thin tubes, use subtle additive glow only on focus.
 - Node images look distorted: crop to square from top center, never stretch.
 - Cache appears stale: update all query-string versions and `BUILD_ID`.
+- Generated background not visible: first check the asset URL returns 200, then ensure the page imports the updated cache version. If the CSS layer exists but the user still cannot see it, WebGL is probably covering it; load the image with `scene.background = new THREE.TextureLoader().load(...)` instead of relying on CSS behind the canvas.
+- Background appears unchanged after changing the image: compare the actual loaded URL/version, check that the local asset file changed, and remember that very dark generated images plus a heavy overlay can look identical. Temporarily reduce overlay opacity or sample a screenshot before assuming the file failed to load.

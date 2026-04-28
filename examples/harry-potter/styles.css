@@ -33,30 +33,30 @@ body {
   height: 100%;
   cursor: grab;
   isolation: isolate;
+  background: #09060a;
 }
 
-#graph-root::before,
-#graph-root::after {
-  content: "";
+.graph-bg,
+.graph-bg-image,
+.graph-bg-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-#graph-root::before {
+.graph-bg {
   z-index: 0;
-  background:
-    linear-gradient(180deg, rgba(9, 6, 10, 0.18), rgba(6, 5, 7, 0.28)),
-    url("./assets/harry-potter-dark-bg.webp") center / cover no-repeat;
-  filter: saturate(0.86) contrast(1.05) brightness(0.72);
-  transform: scale(1.02);
+  overflow: hidden;
 }
 
-#graph-root::after {
-  z-index: 1;
+.graph-bg-image {
+  display: none;
+}
+
+.graph-bg-overlay {
   background:
-    radial-gradient(circle at 50% 38%, rgba(10, 7, 9, 0.26), rgba(5, 4, 6, 0.68) 66%, rgba(3, 3, 4, 0.9) 100%),
-    linear-gradient(90deg, rgba(4, 3, 5, 0.68), rgba(8, 6, 8, 0.34) 45%, rgba(4, 3, 5, 0.72));
+    radial-gradient(circle at 50% 38%, rgba(10, 7, 9, 0.08), rgba(5, 4, 6, 0.22) 66%, rgba(3, 3, 4, 0.48) 100%),
+    linear-gradient(90deg, rgba(4, 3, 5, 0.38), rgba(8, 6, 8, 0.12) 45%, rgba(4, 3, 5, 0.42));
 }
 
 #graph-root:active {
@@ -69,7 +69,7 @@ body {
 
 #graph-root canvas {
   position: relative;
-  z-index: 2;
+  z-index: 0;
   display: block;
 }
 
