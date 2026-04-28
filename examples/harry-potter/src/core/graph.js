@@ -187,31 +187,10 @@ export function createGraphController({ THREE, groups, controls, typeMeta, graph
     return label;
   }
 
-  function formatPerspective(edge, perspective) {
-    const fromLabel = graphState.getNode(perspective.from)?.label ?? perspective.from;
-    const toLabel = graphState.getNode(perspective.to)?.label ?? perspective.to;
-    return `${fromLabel} -> ${toLabel}: ${perspective.label}`;
-  }
-
   function makeEdgeLabel(edge, start, end) {
     const element = document.createElement("div");
-    element.className = edge.perspectives?.length ? "edge-label perspective-label" : "edge-label";
-
-    if (edge.perspectives?.length) {
-      const title = document.createElement("div");
-      title.className = "edge-label-title";
-      title.textContent = edge.label;
-      element.appendChild(title);
-
-      edge.perspectives.forEach((perspective) => {
-        const item = document.createElement("div");
-        item.className = "edge-perspective-item";
-        item.textContent = formatPerspective(edge, perspective);
-        element.appendChild(item);
-      });
-    } else {
-      element.textContent = edge.label;
-    }
+    element.className = "edge-label";
+    element.textContent = edge.label;
 
     const label = new CSS2DObject(element);
     label.position.copy(start).lerp(end, 0.5);
@@ -881,11 +860,12 @@ export function createGraphController({ THREE, groups, controls, typeMeta, graph
       edge.mesh.material.color.setHex(isDirectEdge ? style.activeColor : style.color);
       edge.glowMesh.material.opacity = (isDirectEdge ? 0.14 : 0) * reveal;
       edge.glowMesh.material.color.setHex(style.activeColor);
-      edge.label.visible = false;
+      const activeLabelVisible = isDirectEdge && reveal > 0.92;
+      edge.label.visible = activeLabelVisible;
       edge.label.element.style.setProperty("--edge-accent", style.cssColor);
-      edge.label.element.classList.toggle("visible", false);
-      edge.label.element.classList.toggle("focus-visible", false);
-      edge.label.element.style.opacity = "0";
+      edge.label.element.classList.toggle("visible", activeLabelVisible);
+      edge.label.element.classList.toggle("focus-visible", activeLabelVisible);
+      edge.label.element.style.opacity = activeLabelVisible ? "0.96" : "0";
     });
 
     if (forceFocus) {
