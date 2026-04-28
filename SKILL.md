@@ -1,6 +1,6 @@
 ---
 name: narrative-relationship-graph
-description: Use when the user wants to create, update, personalize, or rebuild an interactive narrative relationship graph / 3D character-event-world network, including preparing node data, writing relationships, splitting overview/subgraph views, encoding factions, and adapting the bundled template.html and the existing Three.js project at /Users/yves/narrative-graph-mvp for stories such as Harry Potter, 红楼梦, 进击的巨人, historical narratives, games, novels, or fictional universes.
+description: Use when the user wants to create, update, personalize, or rebuild an interactive narrative relationship graph / 3D character-event-world network, including preparing node data, writing relationships, splitting overview/subgraph views, encoding factions, searching Wikimedia node images, adapting the bundled template.html, and creating a themed Three.js graph for stories such as 红楼梦, 进击的巨人, Harry Potter, historical narratives, games, novels, or fictional universes.
 metadata:
   short-description: Build personalized narrative relationship graphs
 ---
@@ -24,13 +24,9 @@ Use the standalone HTML shell bundled with this skill as the HTML entry template
 
 Do not inline the HTML into `SKILL.md`. When a user asks to create or personalize a relationship graph, copy or adapt `template.html` as the page shell, then connect it to the graph app scripts/styles.
 
-The current complete runnable project remains the reusable implementation reference:
+The reusable implementation pattern is a static Three.js relationship graph with modular JS, CSS, vendored Three.js, node cards, subgraph navigation, themed nodes, faction-colored nodes, curved relation lines, hover/focus behavior, and a cache-busted entry flow.
 
-`/Users/yves/narrative-graph-mvp`
-
-This project is a static Three.js relationship graph with modular JS, CSS, vendored Three.js, node cards, subgraph navigation, crystal-ball nodes, faction-colored nodes, curved relation lines, hover/focus behavior, and a cache-busted entry flow.
-
-Important: the runnable reference project may currently contain a specific story theme from recent work. Treat that as an implementation example, not as the default theme. For a new world, replace the data, title, copy, colors, decorative elements, node imagery, and typography so the result no longer feels like the previous story.
+For a new world, create or adapt a project using this structure, then replace the data, title, copy, colors, decorative elements, node imagery, and typography so the result is specific to the user's story.
 
 Default preview URL:
 
@@ -331,7 +327,7 @@ Subgraphs should rebuild the graph from their own node/edge set, not simply dim 
 
 ## Adaptive Layout Rules
 
-Do not hardcode layout around a specific story's node IDs unless the user explicitly wants a hand-curated poster-like layout. The Harry Potter reference project contains some hand-tuned overview sectors, but a reusable skill should prefer data-driven layout.
+Do not hardcode layout around a specific story's node IDs unless the user explicitly wants a hand-curated poster-like layout. A reusable skill should prefer data-driven layout with optional theme-specific overrides.
 
 Use this layout strategy for new worlds:
 
@@ -446,7 +442,7 @@ Add overview first, then 3-8 useful subgraphs. Each subgraph should answer a cle
 
 8. Reset the visual theme.
 
-Do this as a required step, not a final polish pass. Change colors, background, typography, camera, node materials, card tone, decorative elements, title, and accessibility labels to match the world. Preserve interaction and graph-reading clarity. Never ship a new world while it still looks like the previous reference project's franchise theme.
+Do this as a required step, not a final polish pass. Change colors, background, typography, camera, node materials, card tone, decorative elements, title, and accessibility labels to match the world. Preserve interaction and graph-reading clarity. Never ship a new world while it still looks like a previous franchise theme.
 
 ## Implementation Checklist
 
