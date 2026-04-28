@@ -420,7 +420,14 @@ Only add places and objects that connect important characters, factions, or even
 
 6. Search and attach node images.
 
-For character, faction, place, and iconic object nodes, search Wikimedia / Wikimedia Commons first. Add images where a clear representative image exists, and leave the node image-free when the result is uncertain or visually misleading. Do not delay the graph for perfect image coverage; prioritize core characters and visually important world nodes.
+For character, faction, place, and iconic object nodes, use the Wikimedia APIs first. Add images where a clear representative image exists, and leave the node image-free when the result is uncertain or visually misleading. Do not delay the graph for perfect image coverage; prioritize core characters and visually important world nodes.
+
+Primary API flow:
+
+1. Search Wikimedia Commons files with the MediaWiki Action API.
+2. Fetch the selected file's direct thumbnail URL and metadata with `prop=imageinfo`.
+3. If Commons search is poor but the node has a strong Wikipedia page, use Wikipedia `prop=pageimages` as a fallback.
+4. Store the final renderable image URL plus provenance fields on the node.
 
 For each accepted image, store:
 
@@ -459,12 +466,59 @@ Keep the current project architecture unless there is a strong reason to refacto
 
 If the graph uses real character images, avatars, faction marks, place photos, or object covers, verify sources before adding URLs. Wikimedia-style URLs can work well, but may fail CORS or disappear. Implement graceful fallback.
 
+Use Wikimedia APIs instead of manual search whenever possible.
+
+Official references:
+
+- MediaWiki `list=search`: https://www.mediawiki.org/wiki/API:Search
+- MediaWiki `prop=imageinfo`: https://www.mediawiki.org/wiki/API:Imageinfo
+- PageImages `prop=pageimages`: https://www.mediawiki.org/wiki/Extension:PageImages#API
+
+Primary endpoint:
+
+```text
+https://commons.wikimedia.org/w/api.php
+```
+
+Search files on Wikimedia Commons:
+
+```text
+https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&list=search&srnamespace=6&srlimit=8&srsearch=<query>
+```
+
+Use namespace `6` because Commons files live in the `File:` namespace. Pick the best `title` from the search results, for example `File:Example.jpg`.
+
+Fetch the direct image URL, thumbnail URL, dimensions, MIME type, and source metadata:
+
+```text
+https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&prop=imageinfo&titles=<File:Example.jpg>&iiprop=url|mime|size|extmetadata&iiurlwidth=512
+```
+
+Map the response into node fields:
+
+```js
+{
+  image: imageinfo.thumburl ?? imageinfo.url,
+  imageSource: imageinfo.descriptionurl,
+  imageCredit: imageinfo.extmetadata?.ObjectName?.value ?? fileTitle
+}
+```
+
+Fallback endpoint for a Wikipedia page image:
+
+```text
+https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages&piprop=thumbnail|original&pithumbsize=512&titles=<Article title>
+```
+
+For non-English works, use the relevant Wikipedia host when needed, such as `zh.wikipedia.org` or `ja.wikipedia.org`, but prefer Commons for reusable media.
+
 Recommended search order:
 
-1. Wikimedia Commons file page for public/free media.
-2. Wikipedia infobox image when Commons is not obvious.
-3. Official/public-domain source where appropriate for historical or real-world topics.
-4. No image if the result is uncertain, low quality, or likely rights-sensitive.
+1. Wikimedia Commons Action API file search.
+2. Wikimedia Commons `prop=imageinfo` for selected file URLs and metadata.
+3. Wikipedia `prop=pageimages` for an article infobox image when Commons search is not obvious.
+4. Official/public-domain source where appropriate for historical or real-world topics.
+5. No image if the result is uncertain, low quality, or likely rights-sensitive.
 
 Good Wikimedia query patterns:
 
