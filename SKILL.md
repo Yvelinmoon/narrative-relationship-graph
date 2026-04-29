@@ -24,7 +24,19 @@ Use the standalone HTML shell bundled with this skill as the HTML entry template
 
 Do not inline the HTML into `SKILL.md`. When a user asks to create or personalize a relationship graph, copy or adapt `template.html` as the page shell, then connect it to the graph app scripts/styles.
 
-The `examples/harry-potter/` folder is a runnable example snapshot showing current implementation patterns: modular Three.js, subgraph navigation, clicked-node cards, Wikimedia-style node images, Neta-generated background asset, and robust `scene.background` texture handling. Use it as implementation reference when needed, but do not copy its Harry Potter theme, data, colors, or labels into unrelated worlds.
+The `template.html` file is intentionally a minimal HTML shell, not a full page implementation. It defines only the stable entry contract:
+
+- `#graph-root` as the mount point
+- `styles.css` as the stylesheet entry
+- `app.js` as the module entry
+- cache-busting query strings
+- title and accessibility label placeholders
+
+This is enough because the actual reusable implementation lives in `examples/reference/`: modular Three.js scene/controller/state/data files, subgraph navigation, clicked-node cards, Wikimedia-style node images, generated/local background assets, and robust `scene.background` texture handling. Strictly follow the template contract for every new graph, then copy/adapt the reference implementation behind that shell.
+
+Do not inline a whole application into `template.html`, and do not replace the template shell with a custom one-off HTML structure unless the user explicitly asks for a different runtime. When creating a graph, start from this shell and connect it to `app.js`, `styles.css`, and `src/` modules.
+
+The `examples/reference/` folder is a runnable example snapshot showing current implementation patterns. Use it as implementation reference when needed, but do not copy its Harry Potter theme, data, colors, or labels into unrelated worlds.
 
 The reusable implementation pattern is a static Three.js relationship graph with modular JS, CSS, vendored Three.js, node cards, subgraph navigation, themed nodes, faction-colored nodes, curved relation lines, hover/focus behavior, and a cache-busted entry flow.
 

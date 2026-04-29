@@ -1,6 +1,6 @@
-# Harry Potter Relationship Graph
+# Reference Relationship Graph
 
-A three.js-based frontend prototype for exploring the Harry Potter relationship network.
+A three.js-based frontend prototype for exploring an interactive narrative relationship network. The bundled data/theme is Harry Potter, but this directory is named `reference` because it is intended to demonstrate implementation patterns, not to define the default story or theme.
 
 This folder is an implementation example, not the default theme. It demonstrates current expected patterns for the skill:
 
