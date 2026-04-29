@@ -309,6 +309,42 @@ Suggested priority:
 
 Do not add complex outer rings or many small pips unless the user explicitly asks for multi-affiliation glyphs. They are easy to misunderstand.
 
+## Relationship Direction And Data Validation
+
+Relation classes must match the actual node endpoint order, not just the semantic wording in your head. If an edge is stored as `{ source: "event", target: "character" }`, its relation must be `event-character`, not `character-event`. If the rendering layer only has a style for `character-event`, normalize the style in code, but keep the data truthful.
+
+Before delivery, run an import-level data validation pass, not only `node --check`. `node --check` catches syntax but will not catch missing nodes, empty views, wrong endpoint order, or positions that resolve to `undefined` at runtime.
+
+Recommended validator:
+
+```bash
+node --input-type=module <<'JS'
+import { DATASET, GRAPH_VIEWS, TYPE_META } from './src/data/<story>.js';
+import { createGraphState } from './src/core/state.js';
+
+const ids = new Set(DATASET.nodes.map((node) => node.id));
+const badEdges = DATASET.edges.filter((edge) => !ids.has(edge.source) || !ids.has(edge.target));
+const emptyDescriptions = DATASET.nodes.filter((node) => !node.description);
+
+if (badEdges.length) throw new Error(`Bad edge endpoints: ${JSON.stringify(badEdges.slice(0, 5))}`);
+if (emptyDescriptions.length) throw new Error(`Missing descriptions: ${emptyDescriptions.map((n) => n.id).join(', ')}`);
+
+const state = createGraphState({ ...DATASET, views: GRAPH_VIEWS }, TYPE_META);
+for (const section of GRAPH_VIEWS) {
+  for (const view of section.children ?? []) {
+    state.setActiveView(view.id);
+    const nodes = state.getNodes();
+    const missingPositions = nodes.filter((node) => !state.getNodePosition(node.id));
+    if (!nodes.length) throw new Error(`Empty view: ${view.id}`);
+    if (missingPositions.length) throw new Error(`${view.id} missing positions: ${missingPositions.map((n) => n.id).join(', ')}`);
+  }
+}
+console.log('VALIDATED', DATASET.nodes.length, DATASET.edges.length);
+JS
+```
+
+If the graph uses custom relation classes such as `event-character`, add matching entries to relation labels and style normalization so info cards and edge drawing do not silently fall back to misleading defaults.
+
 ## Info Card Rules
 
 The clicked-node card should provide useful detail without becoming a second page. Keep it compact and scannable.
@@ -597,6 +633,35 @@ Rendering fallback rules:
 - Crop portraits from top center when possible to preserve heads
 - Do not let images distort; crop rather than stretch
 
+## Image Reliability And Local Caching
+
+Wikimedia thumbnail URLs are not safe to hand-edit. Do not change `960px-...` to `512px-...` by string replacement; Wikimedia only supports specific thumbnail steps for some files and will return HTTP 400 (`Use thumbnail steps listed...`) for invalid sizes. Prefer URLs returned directly by `prop=imageinfo&iiurlwidth=<size>` or Wikipedia `pageimages`.
+
+Remote Wikimedia image URLs can also hit 429 robot-policy/rate-limit errors when a page loads many images or when the agent verifies many URLs in a short window. For important node portraits, download reliable image responses into local `assets/portraits/` and point `node.image` at the local file. Keep `imageSource` and `imageCredit` pointing to the Wikimedia/Wikipedia source page for provenance.
+
+Recommended caching flow:
+
+1. Use the API-returned `thumburl` exactly as returned.
+2. Verify with `curl -I` or a small scripted request.
+3. If the remote URL returns 400 or 429, try the API again later or download the original/file URL once and cache locally.
+4. Store local portraits as `assets/portraits/<node-id>.<ext>` and use `image: "./assets/portraits/<node-id>.<ext>"`.
+5. Never leave broken remote URLs in final data. If no reliable image exists, omit `image` or use a clearly marked generated/generic fallback.
+6. For generated or generic avatars, make `imageCredit` explicit, for example: `Neta generated generic official avatar; not a real-person likeness`.
+
+For browser rendering, prefer local assets for any image that appears in many nodes or is critical to the experience. Local 200 responses are more important than perfect remote thumbnail size.
+
+## Background Asset Readability
+
+Generated backgrounds should be background plates, not posters. For relationship graphs, prefer spacious, low-contrast, dark 16:9 compositions with a clean center and subtle world-specific silhouettes near the edges or horizon. Avoid large radial color blobs, bright central objects, readable text, logos, faces, flags dominating the frame, or high-detail illustrations that compete with nodes.
+
+Prompt pattern:
+
+```text
+A spacious dark cinematic background plate for an interactive <world> relationship graph, wide empty center for network nodes, subtle <representative architecture/symbol> as faint outlines near the lower horizon, deep <palette> atmosphere, understated linework, tiny accent colors, no people, no readable text, no logos, minimal, high readability, background plate not poster
+```
+
+After generation, inspect the result before wiring it in. If the user says the background shows “large blocks”, “two big color patches”, or “too busy”, regenerate with: wide empty center, no large radial glow, no poster composition, and darker/low-contrast constraints. If needed, darken locally with an overlay or image processing, but do not let the background hide nodes.
+
 ## Neta Generated Assets
 
 Use Neta generation when the user wants a custom theme background, when real-source images are unavailable, or when the graph needs a coherent non-photographic visual system.
@@ -705,20 +770,26 @@ If subgraphs changed, verify every view has at least one node and preferably at 
 Asset verification checklist:
 
 - Wikimedia pass completed for core nodes, with `imageSource`/`imageCredit` where images are used.
+- Do not rely only on syntax checks; run the import-level data validator above to catch missing endpoints, empty descriptions, empty views, and missing node positions.
 - Neta 16:9 background generated or a skip reason is documented.
 - Generated/downloaded assets live under local `assets/`, not only remote URLs.
+- Important portraits that failed remote verification are cached under local `assets/portraits/` or intentionally omitted.
 - Background asset is wired through Three.js `scene.background` for graph pages using WebGL.
-- `curl -I` returns 200 for the page and for at least one local image/background asset.
+- `curl -I` returns 200 for the page, background asset, and representative local portrait assets.
 - Cache-busting versions changed in `index.html`, `app.js`, `src/main.js`, and `BUILD_ID`.
 
 ## Common Failure Modes
 
+- Graph appears styled but no nodes are visible: check canvas/label stacking. The WebGL canvas must sit above background/decor layers, for example `#graph-root canvas { position: absolute; inset: 0; z-index: 6; }` and `.label-layer { z-index: 7; pointer-events: none; }`. A decorative overlay with a higher z-index can hide the whole graph.
 - Old CSS2D labels remain after view switch: recursively remove CSS2D DOM when clearing old graph objects.
 - User sees two graphs at once: old node or label groups were not fully cleared.
 - Graph is too dense: create smaller subgraphs instead of shrinking labels.
 - Faction is unclear: encode faction in node color, not in extra rings or tiny glyphs.
 - Lines look like electric wires: reduce saturation, use thin tubes, use subtle additive glow only on focus.
 - Node images look distorted: crop to square from top center, never stretch.
+- Node images fail even though a Wikimedia image exists: do not manually edit Wikimedia thumbnail dimensions. Use API-returned `thumburl`, cache the image locally, or omit the image. Invalid thumbnail steps return 400; repeated remote loads can return 429.
+- Remote images load during development but fail in the shared page: cache important portraits and backgrounds locally under `assets/` and verify 200 responses from the shared static path.
+- Background looks like two giant color blocks or a poster: regenerate as a sparse background plate with an empty center, or darken/reduce contrast. The graph should dominate the composition.
 - Cache appears stale: update all query-string versions and `BUILD_ID`.
 - Generated background not visible: first check the asset URL returns 200, then ensure the page imports the updated cache version. If the CSS layer exists but the user still cannot see it, WebGL is probably covering it; load the image with `scene.background = new THREE.TextureLoader().load(...)` instead of relying on CSS behind the canvas.
 - Background appears unchanged after changing the image: compare the actual loaded URL/version, check that the local asset file changed, and remember that very dark generated images plus a heavy overlay can look identical. Temporarily reduce overlay opacity or sample a screenshot before assuming the file failed to load.
