@@ -20,7 +20,7 @@ Use this skill when the user asks to build or modify a relationship-network fron
 
 Use the standalone HTML shell bundled with this skill as the HTML entry template:
 
-`/Users/yves/.codex/skills/narrative-relationship-graph/template.html`
+`template.html` in this skill directory
 
 Do not inline the HTML into `SKILL.md`. When a user asks to create or personalize a relationship graph, copy or adapt `template.html` as the page shell, then connect it to the graph app scripts/styles.
 
@@ -32,13 +32,15 @@ The `template.html` file is intentionally a minimal HTML shell, not a full page 
 - cache-busting query strings
 - title and accessibility label placeholders
 
-This is enough because the actual reusable implementation lives in `examples/reference/`: modular Three.js scene/controller/state/data files, subgraph navigation, clicked-node cards, Wikimedia-style node images, generated/local background assets, and robust `scene.background` texture handling. Strictly follow the template contract for every new graph, then copy/adapt the reference implementation behind that shell.
+This is enough because the actual reusable implementation lives in `examples/starter/`: modular Three.js scene/controller/state/data files, subgraph navigation, clicked-node cards, Wikimedia-style node images, generated/local background assets, generic data-driven layout, dynamic faction colors, and robust `scene.background` texture handling. Strictly follow the template contract for every new graph, then copy/adapt the starter implementation behind that shell.
 
 Do not inline a whole application into `template.html`, and do not replace the template shell with a custom one-off HTML structure unless the user explicitly asks for a different runtime. When creating a graph, start from this shell and connect it to `app.js`, `styles.css`, and `src/` modules.
 
-The `examples/reference/` folder is a runnable example snapshot showing current implementation patterns. Use it as implementation reference when needed, but do not copy its Harry Potter theme, data, colors, or labels into unrelated worlds.
+Use `examples/starter/` as the default project skeleton for new worlds. It is intentionally neutral and contains `src/data/story.js` placeholders, a data-driven layout, dynamic `dataset.factions`, and empty `assets/portraits/thumb|card/` folders. Replace only the dataset, theme tokens, title, background asset, and decorative CSS needed for the new world.
 
-The reusable implementation pattern is a static Three.js relationship graph with modular JS, CSS, vendored Three.js, node cards, subgraph navigation, themed nodes, faction-colored nodes, curved relation lines, hover/focus behavior, and a cache-busted entry flow.
+The `examples/reference/` folder is only a runnable example snapshot showing current implementation patterns. It may be story-specific. Use it as implementation reference when needed, but do not copy its Harry Potter theme, data, colors, labels, hardcoded IDs, or background into unrelated worlds.
+
+The reusable implementation pattern is a static Three.js relationship graph with modular JS, CSS, vendored Three.js, node cards, subgraph navigation, themed nodes, dynamic faction-colored nodes, curved relation lines, hover/focus behavior, compressed local portraits, and a cache-busted entry flow.
 
 For a new world, create or adapt a project using this structure, then replace the data, title, copy, colors, decorative elements, node imagery, and typography so the result is specific to the user's story.
 
@@ -67,23 +69,25 @@ Do not treat image search or generated theme assets as optional polish. Before f
 
 1. Data gate: every node has a stable ID, type, zone, 50-100 Chinese character `description`, and meaningful relation labels.
 2. Wikimedia image gate: run a Wikimedia API image pass for core characters, factions, places, and iconic objects. Add `image`, `imageSource`, and `imageCredit` when a reliable image exists. If no image is used for an important node, record or mention why, such as no clear result, rights risk, or misleading image.
-3. Neta theme asset gate: for a themed graph, generate or select a 16:9 theme background with Neta unless the user explicitly opts out or authentication/quota blocks it. Download the result into local `assets/` and wire it into the project.
-4. Theme reset gate: remove prior-world text, colors, decorative motifs, and hardcoded IDs from the visible app unless continuing that exact world.
-5. Verification gate: check local serving, syntax, cache-busting versions, and at least one visible route where node images/background assets load.
+3. Portrait compression gate: any downloaded/generated portrait used by nodes must be compressed into `assets/portraits/thumb/` and preferably `assets/portraits/card/`. `node.image` must point to `thumb/`, not a large original.
+4. Neta theme asset gate: for a themed graph, generate or select a 16:9 theme background with Neta unless the user explicitly opts out or authentication/quota blocks it. Download the result into local `assets/` and wire it into the project.
+5. Theme reset gate: remove prior-world text, colors, decorative motifs, and hardcoded IDs from the visible app unless continuing that exact world.
+6. Verification gate: check local serving, syntax, cache-busting versions, and at least one visible route where node images/background assets load.
 
-Final updates should mention the Wikimedia pass and Neta asset pass. If either was skipped, say why in one sentence.
+Final updates should mention the Wikimedia pass, portrait compression pass, and Neta asset pass. If any was skipped, say why in one sentence.
 
 ## Default Execution Order
 
 Use this order for new themed graph builds unless the user explicitly narrows the task:
 
-1. Create or copy the project shell from `template.html` and the modular Three.js architecture.
+1. Create or copy the project shell from `template.html` plus `examples/starter/`. Do not start from `examples/reference/` unless continuing that exact reference world.
 2. Build the node/edge/view data with descriptions and directional perspectives where needed.
-3. Run the Wikimedia API image pass for important nodes and store provenance.
+3. Run the Wikimedia API image pass for important nodes and store provenance. Use sleeps/backoff; do not rapid-fire repeated Wikimedia requests.
 4. Run Neta generation for the primary 16:9 background or document the skip reason.
-5. Reset the visual theme, including palette, node materials, cards, background, and decorative motifs.
-6. Wire generated/downloaded assets locally under `assets/` and update cache versions.
-7. Verify syntax, local serving, asset URLs, subgraphs, and visible background/node image behavior.
+5. Compress every downloaded/generated portrait into `assets/portraits/thumb/` and `assets/portraits/card/` before wiring it into data.
+6. Reset the visual theme, including palette, node materials, cards, background, and decorative motifs.
+7. Wire compressed local assets under `assets/` and update cache versions.
+8. Verify syntax, local serving, asset URLs, subgraphs, and visible background/node image behavior.
 
 ## Product Principle
 
@@ -551,16 +555,17 @@ Use Neta image generation to create at least the primary 16:9 page background fo
 
 ## Implementation Checklist
 
-When editing the base project, usually touch these files:
+For new projects, copy `examples/starter/` first. Usually touch these files:
 
-- `src/data/<story>.js`: preferred for a new world; use existing story files only when continuing that same graph
-- `src/core/state.js`: subgraph filtering and layout behavior if needed
-- `src/core/graph.js`: node materials, faction color priority, edge style, reveal/highlight behavior
-- `src/core/scene.js`: camera, lighting, controls, generated background texture via `scene.background`
-- `src/main.js`: story data import, decorative DOM, view index, build stamp, initialization
-- `styles.css`: theme tokens, UI, labels, cards, decorative atmosphere, dark overlay for generated backgrounds
-- `assets/`: local Wikimedia downloads or Neta-generated backgrounds/icons/avatars
-- `index.html` and `app.js`: title, accessibility labels, data-entry import, and cache-busting
+- `src/data/<story>.js`: replace `src/data/story.js`; export `DATASET`, `GRAPH_VIEWS`, and `TYPE_META`.
+- `src/main.js`: update the data import from `./data/story.js` to `./data/<story>.js`, update `DATASET_KEY` if needed, and bump `BUILD_ID`.
+- `styles.css`: theme tokens, UI, labels, cards, decorative atmosphere, dark overlay for generated backgrounds.
+- `src/core/scene.js`: usually only background filename, fog, camera, or lighting if the starter defaults are insufficient.
+- `src/core/graph.js`: usually only node material and edge style; faction colors should come from `DATASET.factions` where possible.
+- `assets/`: generated/downloaded background, raw portraits, compressed `assets/portraits/thumb/`, compressed `assets/portraits/card/`.
+- `index.html` and `app.js`: title, accessibility labels, data-entry import, and cache-busting.
+
+Avoid editing layout code for story IDs. The starter layout is generic and should place nodes from `zone`, `type`, `faction`, `importance`, graph degree, and view root. Only add hand-tuned layout overrides if the user explicitly requests poster-like placement.
 
 Keep the current project architecture unless there is a strong reason to refactor.
 
@@ -653,14 +658,50 @@ Remote Wikimedia image URLs can also hit 429 robot-policy/rate-limit errors when
 
 Recommended caching flow:
 
-1. Use the API-returned `thumburl` exactly as returned.
-2. Verify with `curl -I` or a small scripted request.
+1. Use the API-returned `thumburl` exactly as returned. Sleep 2-5 seconds between Wikimedia API/file requests and back off 10-30 seconds on 429.
+2. Verify with `curl -I` or a small scripted request. Do not verify dozens of remote files in a tight loop.
 3. If the remote URL returns 400 or 429, try the API again later or download the original/file URL once and cache locally.
-4. Store local portraits as `assets/portraits/<node-id>.<ext>` and use `image: "./assets/portraits/<node-id>.<ext>"`.
-5. Never leave broken remote URLs in final data. If no reliable image exists, omit `image` or use a clearly marked generated/generic fallback.
-6. For generated or generic avatars, make `imageCredit` explicit, for example: `Neta generated generic official avatar; not a real-person likeness`.
+4. Store raw downloaded/generated portraits as `assets/portraits/<node-id>.<ext>` first.
+5. Run the compression workflow below, then wire data to compressed local files:
+   - `image: "./assets/portraits/thumb/<node-id>.webp"` for graph node sprites.
+   - `imageCard: "./assets/portraits/card/<node-id>.webp"` for clicked info cards when supported.
+6. Never leave broken remote URLs in final data. If no reliable image exists, omit `image` or use a clearly marked generated/generic fallback.
+7. For generated or generic avatars, make `imageCredit` explicit, for example: `Neta generated generic official avatar; not a real-person likeness`.
 
-For browser rendering, prefer local assets for any image that appears in many nodes or is critical to the experience. Local 200 responses are more important than perfect remote thumbnail size.
+For browser rendering, always prefer compressed local assets for any image that appears in many nodes or is critical to the experience. Local 200 responses are more important than perfect remote thumbnail size.
+
+## Mandatory Portrait Compression Workflow
+
+Do not point graph nodes at large Wikimedia originals or Neta 1024/2048 images. Node sprites are tiny, and uncompressed portraits will make the graph feel slow.
+
+Before final delivery, compress every portrait into two tiers:
+
+- `assets/portraits/thumb/<node-id>.webp`: 256×256, WebP quality around 75, used by `node.image` for always-loaded graph sprites.
+- `assets/portraits/card/<node-id>.webp`: 512×512, WebP quality around 80, used by `node.imageCard` for clicked cards if the implementation supports it.
+
+Use the bundled helper from the graph project root:
+
+```bash
+python3 /workspace/skills/narrative-relationship-graph/tools/compress_portraits.py assets/portraits
+```
+
+If Pillow is missing and cannot be installed, use ImageMagick or another local image tool, but keep the same output contract. The compression crop should be top-center square to preserve character heads.
+
+After compression, update data like this:
+
+```js
+{
+  id: "core-character",
+  image: "./assets/portraits/thumb/core-character.webp",
+  imageCard: "./assets/portraits/card/core-character.webp",
+  imageSource: "https://commons.wikimedia.org/wiki/File:...",
+  imageCredit: "Wikimedia Commons / File title"
+}
+```
+
+If the graph implementation only supports `image`, set `image` to the `thumb/` file. Do not use the raw full-size portrait for `image`.
+
+Verification must include checking that representative `thumb/` files return 200 and that total thumbnail size is reasonable, ideally under ~15KB per portrait and under a few hundred KB total for normal datasets.
 
 ## Background Asset Readability
 
