@@ -68,13 +68,14 @@ Keep the bundled `template.html` as the HTML shell and the full Three.js project
 Do not treat image search or generated theme assets as optional polish. Before final delivery, explicitly pass these gates or state the blocker.
 
 1. Data gate: every node has a stable ID, type, zone, 50-100 Chinese character `description`, and meaningful relation labels.
-2. Wikimedia image gate: run a Wikimedia API image pass for core characters, factions, places, and iconic objects. Add `image`, `imageSource`, and `imageCredit` when a reliable image exists. If no image is used for an important node, record or mention why, such as no clear result, rights risk, or misleading image.
-3. Portrait compression gate: any downloaded/generated portrait used by nodes must be compressed into `assets/portraits/thumb/` and preferably `assets/portraits/card/`. `node.image` must point to `thumb/`, not a large original.
-4. Neta theme asset gate: for a themed graph, generate or select a 16:9 theme background with Neta unless the user explicitly opts out or authentication/quota blocks it. Download the result into local `assets/` and wire it into the project.
-5. Theme reset gate: remove prior-world text, colors, decorative motifs, and hardcoded IDs from the visible app unless continuing that exact world.
-6. Verification gate: check local serving, syntax, cache-busting versions, and at least one visible route where node images/background assets load.
+2. Wikimedia image gate: run a Wikimedia API image pass for core characters, factions, places, and iconic objects, then run an explicit QA pass. Add `image`, `imageSource`, and `imageCredit` when a reliable image exists. If no image is used for an important node, record the reviewed candidates and the concrete rejection reason, such as no clear result, rights risk, misleading image, broken URL, or weak semantic match. It is not enough to only search; accepted images must be wired into data or rejected with QA evidence.
+3. Neta fictional avatar gate: for 二次元、动画、漫画、游戏、轻小说、电影等 modern copyrighted fictional characters, do not stop after Wikimedia rejection. After Wikimedia QA, run Neta character avatar search when available; if no reliable avatar search result is available, generate/select a clearly non-official themed character avatar or symbolic character portrait with Neta, mark it as generated/non-official in `imageCredit`, write a Neta avatar QA report, compress it, and wire it into important character nodes. Only skip this gate when the user opts out, Neta auth/quota/network blocks it, device login fails/expires, or policy/safety blocks generation; record the exact blocker.
+4. Portrait compression gate: any downloaded/generated portrait used by nodes must be compressed into `assets/portraits/thumb/` and preferably `assets/portraits/card/`. `node.image` must point to `thumb/`, not a large original.
+5. Neta theme asset gate: for a themed graph, generate or select a 16:9 theme background with Neta unless the user explicitly opts out or authentication/quota blocks it. Before calling Neta, check whether `NETA_TOKEN` or an existing Neta login is available. If not, proactively request an OAuth device code and send the verification URL/user code to the user; do not merely skip or say to remember login. Download the result into local `assets/` and wire it into the project.
+6. Theme reset gate: remove prior-world text, colors, decorative motifs, and hardcoded IDs from the visible app unless continuing that exact world.
+7. Verification gate: check local serving, syntax, cache-busting versions, and at least one visible route where node images/background assets load.
 
-Final updates should mention the Wikimedia pass, portrait compression pass, and Neta asset pass. If any was skipped, say why in one sentence.
+Final updates should mention the Wikimedia pass, Neta fictional avatar pass, portrait compression pass, and Neta theme asset pass. If any was skipped, say why in one sentence.
 
 ## Default Execution Order
 
@@ -82,12 +83,13 @@ Use this order for new themed graph builds unless the user explicitly narrows th
 
 1. Create or copy the project shell from `template.html` plus `examples/starter/`. Do not start from `examples/reference/` unless continuing that exact reference world.
 2. Build the node/edge/view data with descriptions and directional perspectives where needed.
-3. Run the Wikimedia API image pass for important nodes and store provenance. Use sleeps/backoff; do not rapid-fire repeated Wikimedia requests.
-4. Run Neta generation for the primary 16:9 background or document the skip reason.
-5. Compress every downloaded/generated portrait into `assets/portraits/thumb/` and `assets/portraits/card/` before wiring it into data.
-6. Reset the visual theme, including palette, node materials, cards, background, and decorative motifs.
-7. Wire compressed local assets under `assets/` and update cache versions.
-8. Verify syntax, local serving, asset URLs, subgraphs, and visible background/node image behavior.
+3. Run the Wikimedia API image pass for important nodes, store provenance, and run QA before deciding whether images are usable. Use sleeps/backoff; do not rapid-fire repeated Wikimedia requests.
+4. If the world contains 二次元/modern copyrighted fictional characters and Wikimedia is unsuitable, check Neta authentication and run Neta character avatar search for important characters; if search is unavailable or produces weak results, generate/select non-official themed character avatars with Neta, store a QA report, and wire compressed local portraits. Do not skip this just because Wikimedia failed.
+5. Check Neta authentication (`NETA_TOKEN` or existing CLI login). If missing, request device login and send the returned verification URL/user code to the user, then verify after the user completes it. Run Neta generation for the primary 16:9 background or document only a real blocker such as user refusal, expired device code, quota, network, or unsupported auth.
+6. Compress every downloaded/generated portrait into `assets/portraits/thumb/` and `assets/portraits/card/` before wiring it into data.
+7. Reset the visual theme, including palette, node materials, cards, background, and decorative motifs.
+8. Wire compressed local assets under `assets/` and update cache versions.
+9. Verify syntax, local serving, asset URLs, subgraphs, and visible background/node image behavior.
 
 ## Product Principle
 
@@ -111,6 +113,19 @@ Avoid:
 - Showing all edge labels by default
 - Letting info cards exceed the viewport without scroll protection
 - Random rainbow colors
+
+## Hard Lessons From Prior Builds
+
+These are recurring mistakes that must be actively avoided and checked, not just remembered:
+
+1. Layout coverage: every node in the active overview must receive a real position. Do not assume datasets only use `zone: "character" | "event" | "world"`; many worlds use semantic zones such as `faction`, `place`, `object`, `family`, `school`, or `region`. The overview layout must either handle every zone explicitly or place all non-character/non-event nodes into a world/setting layer. Never let missing layout positions fall back to `(0, 0)`, because they will stack on the root node and look like many nodes occupying the protagonist.
+2. Coordinate QA: after changing data or layout, run a layout overlap check. Confirm `positioned === nodeCount`, `missing.length === 0`, and no non-root nodes are within a small radius of the root unless intentionally placed there. Visual inspection alone can miss stacked nodes hidden under a large avatar.
+3. Edge label rule: relationship text on edges should normally appear only in hover/focus/selection states for the directly highlighted relationships. Do not show all edge labels by default unless the user explicitly asks; it makes the graph noisy and violates the browsing model.
+4. CSS2D label layer: if hover relationship labels do not appear, do not change the product rule to show all labels. First check the CSS2D renderer layer is positioned over the canvas, for example `.label-layer { position: absolute; inset: 0; z-index: <above canvas>; pointer-events: none; }`, and then check the focus logic.
+5. Avatar node layering: when using real or generated avatar sprites, avoid stacking decorative crystal core, rim, glint, halo, and avatar at full strength on the same node. A node should read as one node at one position. Disable decorative glints and reduce shell/halo opacity for image nodes unless the user wants a jewel-like style.
+6. QA metadata belongs in reports, not the user UI. Keep `imageSource`, `imageCredit`, Wikimedia/Neta QA, and provenance in JSON reports and data fields for auditability, but do not display long source/QA text inside normal info cards unless the user asks for provenance mode.
+7. Wikimedia vs fictional avatars: for modern copyrighted fictional characters, Wikimedia often returns cosplay, figures, graffiti, logos, covers, posters, or weak page images. Do not use those as character portraits just because they are searchable. For 二次元/animation/manga/game characters, Neta character avatar search is the preferred next step after Wikimedia QA fails; if search is unavailable, generate/select a non-official themed avatar or symbolic portrait with Neta, credit it clearly as generated/non-official, and keep Wikimedia mainly for generic objects/places after QA.
+8. Authentication flow: if Neta auth is missing, request a device code and send the user the verification link/code. Do not merely record auth as skipped when interactive device login is available.
 
 ## Theme Reset Rules
 
@@ -521,7 +536,7 @@ Only add places and objects that connect important characters, factions, or even
 
 6. Search and attach node images. This step is mandatory for important nodes.
 
-For character, faction, place, and iconic object nodes, use the Wikimedia APIs first. Add images where a clear representative image exists, and leave the node image-free when the result is uncertain or visually misleading. Do not delay the graph for perfect image coverage; prioritize core characters and visually important world nodes. Do not skip this because the graph already works without images.
+For character, faction, place, and iconic object nodes, use the Wikimedia APIs first. Add images where a clear representative image exists, and leave the node image-free when the result is uncertain or visually misleading. Do not delay the graph for perfect image coverage; prioritize core characters and visually important world nodes. Do not skip this because the graph already works without images. Do not treat a search-only pass as complete: after search, QA must confirm whether each important node has a usable image, a cached/compressed local file when used, or a documented rejection reason.
 
 Primary API flow:
 
@@ -532,9 +547,12 @@ Primary API flow:
 
 For each accepted image, store:
 
-- `image`: direct renderable image URL
+- `image`: direct renderable image URL or compressed local `thumb/` asset
+- `imageCard`: compressed local `card/` asset when supported
 - `imageSource`: file or article page URL
 - `imageCredit`: short source label, usually Wikimedia Commons or the file page title
+
+For the QA pass, write a machine-readable report such as `assets/wikimedia-image-pass.json` or `reports/wikimedia-image-pass.json`. Include, per important node: node id, label, queries attempted, candidate file/page titles, candidate URLs, license/attribution metadata when available, selected candidate if any, final decision (`used`, `rejected`, or `fallback`), confidence, rejection reason, local cache path, compression output paths, and HTTP/local-file status. Then verify that every `used` decision is actually reflected in the dataset and that representative image paths return 200 locally. Final delivery should summarize coverage, for example `12 used / 8 rejected / 3 generated fallback`.
 
 7. Create views.
 
@@ -744,11 +762,18 @@ env -u HTTP_PROXY -u HTTPS_PROXY -u ALL_PROXY NETA_API_BASE_URL=https://api.tale
   npx -y @talesofai/neta-skills@latest get_ap_info
 ```
 
+Authentication workflow before Neta generation:
+
+1. Check for a token without printing it: `test -n "$NETA_TOKEN" && echo neta-token-present || echo neta-token-missing`.
+2. If no token is present, check existing CLI login with `npx -y @talesofai/neta-skills@latest get_ap_info`.
+3. If login is required, immediately run `npx -y @talesofai/neta-skills@latest login --action request-code` and send the returned `verification_uri_complete` and `user_code` to the user. Ask the user to complete device login, then run `login --action verify-code`.
+4. Only document authentication as a blocker if the user declines, the device code expires, verification fails after retry, or device login is unsupported and no `NETA_TOKEN` can be provided.
+
 If Neta reports login or network errors:
 
 - Prefer global host: `NETA_API_BASE_URL=https://api.talesofai.com`.
 - If local proxy breaks CLI fetch, unset `HTTP_PROXY`, `HTTPS_PROXY`, and `ALL_PROXY` for the command.
-- If login is required, use `login --action request-code`, open the returned verification URL, then run `login --action verify-code`.
+- If login is required, use the device-code flow above and show the login link/code to the user; do not skip silently.
 - If the region says device login is unsupported, authenticate with `NETA_TOKEN` instead.
 
 After generation:
@@ -822,8 +847,12 @@ If subgraphs changed, verify every view has at least one node and preferably at 
 
 Asset verification checklist:
 
-- Wikimedia pass completed for core nodes, with `imageSource`/`imageCredit` where images are used.
+- Wikimedia pass completed for core nodes, with `imageSource`/`imageCredit` where images are used, and QA report records accepted/rejected candidates.
+- Neta character avatar search completed for important copyrighted fictional characters when Wikimedia is unsuitable; if search is unavailable or weak, Neta generated/non-official themed avatars are created for important characters, compressed, wired into data, and recorded in a Neta avatar QA report. A skip/reject reason is acceptable only for explicit user opt-out, auth/quota/network/device-login blocker, or policy/safety blocker.
 - Do not rely only on syntax checks; run the import-level data validator above to catch missing endpoints, empty descriptions, empty views, and missing node positions.
+- Run a layout coverage/overlap check for overview: every node has a position, no non-root node is accidentally at `(0, 0)`, and no cluster of unrelated nodes overlaps the root.
+- Verify edge label behavior against the product rule: labels are hidden by default and appear on hover/focus/selection for direct highlighted relations only, unless the user requested always-on labels.
+- Verify the clicked-node card shows narrative content only; provenance/QA details should stay in report files unless explicitly requested.
 - Neta 16:9 background generated or a skip reason is documented.
 - Generated/downloaded assets live under local `assets/`, not only remote URLs.
 - Important portraits that failed remote verification are cached under local `assets/portraits/` or intentionally omitted.
@@ -833,6 +862,11 @@ Asset verification checklist:
 
 ## Common Failure Modes
 
+- Many nodes appear stacked on the protagonist/root in overview: layout did not cover all `zone` values and missing positions fell back to `(0, 0)`. Treat unknown/non-character/non-event zones as world-layer nodes or add explicit placement. Add an automated `missing positions` and `near-root non-root nodes` check.
+- Relationship text is missing on hover: do not make all labels visible by default. First check `.label-layer` positioning/z-index and CSS2D rendering, then check direct-edge focus logic.
+- Relationship text is visible all the time: restore the hover/focus rule. Default state should set edge labels invisible/opacity 0; direct focused edges can show labels.
+- Protagonist/root looks like several nodes stacked: distinguish visual layering from coordinate stacking. First run coordinate overlap QA; if coordinates are clean, reduce avatar node decorative layers such as shell/core/rim/glint/halo.
+- Info cards look like debug panels: remove QA/provenance/source logs from user-facing cards. Keep them in `assets/*-qa.json` or `reports/` and summarize only in final delivery.
 - Graph appears styled but no nodes are visible: check canvas/label stacking. The WebGL canvas must sit above background/decor layers, for example `#graph-root canvas { position: absolute; inset: 0; z-index: 6; }` and `.label-layer { z-index: 7; pointer-events: none; }`. A decorative overlay with a higher z-index can hide the whole graph.
 - Old CSS2D labels remain after view switch: recursively remove CSS2D DOM when clearing old graph objects.
 - User sees two graphs at once: old node or label groups were not fully cleared.
